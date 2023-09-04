@@ -1,0 +1,8 @@
+.DS_Store
+# editors
+*.swp
+*~
+
+# build
+/nrf9160-Recreation/build*/
+/nrf9160-ADC-Terminal/build*/
