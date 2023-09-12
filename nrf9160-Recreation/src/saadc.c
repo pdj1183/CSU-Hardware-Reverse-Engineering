@@ -18,8 +18,6 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)
 #define ADC_1ST_CHANNEL_ID 1
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN1
-#define ADC_2ND_CHANNEL_ID 2
-#define ADC_2ND_CHANNEL_INPUT NRF_SAADC_INPUT_AIN2
 #define SLEEP_TIME_MS 700
 
 
@@ -31,10 +29,9 @@ static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.reference = ADC_REFERENCE,
 	.acquisition_time = ADC_ACQUISITION_TIME,
 	.channel_id = ADC_1ST_CHANNEL_ID,
-    .differential = 1,
+    .differential = 0,
 #if defined(CONFIG_ADC_CONFIGURABLE_INPUTS)
 	.input_positive = ADC_1ST_CHANNEL_INPUT,
-    .input_negative = ADC_2ND_CHANNEL_INPUT,
 #endif
 };
 
@@ -60,7 +57,7 @@ static int adc_sample(int *volt, int *raw)
 	ret = adc_read(adc_dev, &sequence);
 	int32_t adc_voltage = m_sample_buffer[0];
 
-	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION-1, &adc_voltage);
+	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION, &adc_voltage);
 	if (ret)
 	{
 		printk("raw_to_mili Broke!");
