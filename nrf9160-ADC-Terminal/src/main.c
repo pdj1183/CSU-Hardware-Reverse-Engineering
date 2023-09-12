@@ -73,42 +73,7 @@ static int adc_sample(int volt)
 
 	return ret;
 }
-/*
-int get_adc_reading(float *reading) {
 
-	struct gpio_dt_spec p17 = GPIO_DT_SPEC_GET(DT_NODELABEL(led0), gpios);
-	if (!device_is_ready(p17.port)) {
-		return -1;
-	}
-	gpio_pin_configure_dt(&p17, GPIO_OUTPUT);
-
-	gpio_pin_set_dt(&p17, 1);
-
-	int err;
-	float volt = 0;
-
-	err = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
-	if (err) {
-		printk("Error in adc setup: %d\n", err);
-		return err;
-	}
-
-
-	NRF_SAADC_NS->TASKS_CALIBRATEOFFSET = 1;
-	for (int i = 0; i <= 20; i++) {
-		err = adc_sample(volt);
-		if (err) {
-			printk("Error in adc sampling: %d\n", err);
-			return err;
-		}
-		k_msleep(SLEEP_TIME_MS);
-	}
-	*reading = volt;
-
-	gpio_pin_set_dt(&p17, 0);
-	return 0;
-}
-*/
 int main(void)
 {
 	struct gpio_dt_spec p17 = GPIO_DT_SPEC_GET(DT_NODELABEL(led0), gpios);
