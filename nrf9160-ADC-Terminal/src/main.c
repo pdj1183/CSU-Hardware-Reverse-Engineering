@@ -3,6 +3,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
+#include <nrfx_saadc.h>
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,28 +12,49 @@
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NODE		DT_NODELABEL(adc)
-#define ADC_RESOLUTION 12
-#define ADC_GAIN ADC_GAIN_1_6
-#define ADC_REFERENCE ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)
+#define ADC_RESOLUTION 14
+#define ADC_GAIN ADC_GAIN_1_4
+#define ADC_REFERENCE ADC_REF_VDD_1_4
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20)
 #define ADC_1ST_CHANNEL_ID 1
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN1
-#define ADC_2ND_CHANNEL_ID 2
-#define ADC_2ND_CHANNEL_INPUT NRF_SAADC_INPUT_AIN2
 #define SLEEP_TIME_MS 700
+#define ADC_OVERSAMPLING SAADC_OVERSAMPLE_OVERSAMPLE_Over256x
 
 const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.gain = ADC_GAIN,
 	.reference = ADC_REFERENCE,
 	.acquisition_time = ADC_ACQUISITION_TIME,
 	.channel_id = ADC_1ST_CHANNEL_ID,
-    .differential = 1,
+    .differential = 0,
+	
 #if defined(CONFIG_ADC_CONFIGURABLE_INPUTS)
 	.input_positive = ADC_1ST_CHANNEL_INPUT,
-    .input_negative = ADC_2ND_CHANNEL_INPUT,
 #endif
+};
+
+/*
+nrfx_saadc_channel_t nrf_1st_channel = {
+	.channel_config = {
+		.resistor_p = NRF_SAADC_RESISTOR_DISABLED,
+		.resistor_n = NRF_SAADC_RESISTOR_DISABLED,
+		.gain = ADC_GAIN,
+		.reference = ADC_REFERENCE,
+		.acq_time = ADC_ACQUISITION_TIME,
+		.mode = NRF_SAADC_MODE_SINGLE_ENDED,
+		.burst = NRF_SAADC_BURST_ENABLED,
+	},
+	.pin_p = NRF_SAADC_INPUT_AIN1,
+	.pin_n = NRF_SAADC_INPUT_DISABLED,
+	.channel_index = 0
+};
+*/
+nrfx_saadc_adv_config_t nrf_adv_1st_cfg = {
+	.oversampling = ADC_OVERSAMPLING,
+	.burst = NRF_SAADC_BURST_ENABLED,
 };
 
 #define BUFFER_SIZE 1
@@ -48,6 +70,7 @@ static int adc_sample(int volt)
 		.buffer = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
 		.resolution = ADC_RESOLUTION,
+		.oversampling = ADC_OVERSAMPLING,
 	};
 
 	if (!adc_dev) {
@@ -61,7 +84,7 @@ static int adc_sample(int volt)
 	int32_t adc_voltage = m_sample_buffer[0];
 	printk("ADC raw value: %d\n", m_sample_buffer[0]);
 
-	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION-1, &adc_voltage);
+	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION, &adc_voltage);
 	if (ret)
 	{
 		printk("raw_to_mili Broke!");
@@ -105,15 +128,6 @@ int main(void)
 		return err;
 	}
 
-	printk("nrf91 saadc sampling AIN0 (P0.13)\n");
-	printk("Example requires secure_boot to have ");
-	printk("SAADC set to non-secure!\n");
-	printk("If not; BusFault/UsageFault will be triggered\n");
-
-	/* Trigger offset calibration
-	 * As this generates a _DONE and _RESULT event
-	 * the first result will be incorrect.
-	 */
 	while (1) {
 		err = adc_sample(volt);
 		if (err) {

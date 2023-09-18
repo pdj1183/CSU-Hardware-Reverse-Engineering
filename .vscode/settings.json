@@ -3,5 +3,10 @@
         "${workspaceFolder}/nrf9160-ADC-Terminal",
         "${workspaceFolder}/nrf9160-Recreation"
     ],
-    "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.4.0}"
+    "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.4.0}",
+    "files.associations": {
+        "adc.h": "c",
+        "nrf_saadc.h": "c",
+        "nrfx_saadc.h": "c"
+    }
 }

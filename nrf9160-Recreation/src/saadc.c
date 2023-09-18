@@ -3,6 +3,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
+#include <nrfx_saadc.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
@@ -12,30 +13,33 @@
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NODE		DT_NODELABEL(adc)
-#define ADC_RESOLUTION 12
-#define ADC_GAIN ADC_GAIN_1_6
-#define ADC_REFERENCE ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)
+#define ADC_RESOLUTION 14
+#define ADC_GAIN ADC_GAIN_1_4
+#define ADC_REFERENCE ADC_REF_VDD_1_4
+#define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20)
 #define ADC_1ST_CHANNEL_ID 1
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN1
-#define ADC_2ND_CHANNEL_ID 2
-#define ADC_2ND_CHANNEL_INPUT NRF_SAADC_INPUT_AIN2
 #define SLEEP_TIME_MS 700
+#define ADC_OVERSAMPLING SAADC_OVERSAMPLE_OVERSAMPLE_Over256x
 
+const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-
-static const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.gain = ADC_GAIN,
 	.reference = ADC_REFERENCE,
 	.acquisition_time = ADC_ACQUISITION_TIME,
 	.channel_id = ADC_1ST_CHANNEL_ID,
-    .differential = 1,
+    .differential = 0,
+	
 #if defined(CONFIG_ADC_CONFIGURABLE_INPUTS)
 	.input_positive = ADC_1ST_CHANNEL_INPUT,
-    .input_negative = ADC_2ND_CHANNEL_INPUT,
 #endif
+};
+
+nrfx_saadc_adv_config_t nrf_adv_1st_cfg = {
+	.oversampling = ADC_OVERSAMPLING,
+	.burst = NRF_SAADC_BURST_ENABLED,
 };
 
 #define BUFFER_SIZE 1
@@ -60,7 +64,7 @@ static int adc_sample(int *volt, int *raw)
 	ret = adc_read(adc_dev, &sequence);
 	int32_t adc_voltage = m_sample_buffer[0];
 
-	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION-1, &adc_voltage);
+	ret = adc_raw_to_millivolts(adc_ref_internal(adc_dev), ADC_GAIN, ADC_RESOLUTION, &adc_voltage);
 	if (ret)
 	{
 		printk("raw_to_mili Broke!");
@@ -101,12 +105,11 @@ int get_adc_reading(int *milivolt, int *raw) {
 
 	
 	
-	for (int i = 0; i <= 20; i++) {
+	for (int i = 0; i <= 2; i++) {
 		err = adc_sample(milivolt, raw);
 		if (err) {
 			return err;
 		}
-		k_msleep(SLEEP_TIME_MS);
 	}
 
 	gpio_pin_set_dt(&p17, 0);
