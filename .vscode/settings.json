@@ -7,6 +7,7 @@
     "files.associations": {
         "adc.h": "c",
         "nrf_saadc.h": "c",
-        "nrfx_saadc.h": "c"
+        "nrfx_saadc.h": "c",
+        "kernel.h": "c"
     }
 }

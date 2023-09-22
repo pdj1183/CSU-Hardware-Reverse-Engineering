@@ -111,8 +111,8 @@ static int shadow_update(bool version_number_include)
 		err = 0;
 	}
 
-	err += json_add_number(reported_obj, "raw adc reading", raw);
-	err += json_add_number(reported_obj, "converted adc reading mV", mV);
+	err += json_add_number(reported_obj, "raw", raw);
+	err += json_add_number(reported_obj, "converted", mV);
 	err += json_add_number(reported_obj, "ts", message_ts);
 	err += json_add_obj(state_obj, "reported", reported_obj);
 	err += json_add_obj(root_obj, "state", state_obj);

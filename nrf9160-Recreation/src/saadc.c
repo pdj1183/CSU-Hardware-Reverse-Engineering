@@ -105,11 +105,12 @@ int get_adc_reading(int *milivolt, int *raw) {
 
 	
 	
-	for (int i = 0; i <= 2; i++) {
+	for (int i = 0; i <= 20; i++) {
 		err = adc_sample(milivolt, raw);
 		if (err) {
 			return err;
 		}
+		k_msleep(SLEEP_TIME_MS);
 	}
 
 	gpio_pin_set_dt(&p17, 0);
