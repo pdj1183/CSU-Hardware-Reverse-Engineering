@@ -8,6 +8,8 @@
         "adc.h": "c",
         "nrf_saadc.h": "c",
         "nrfx_saadc.h": "c",
-        "kernel.h": "c"
+        "kernel.h": "c",
+        "nrfx_gpiote.h": "c",
+        "nrfx_log.h": "c"
     }
 }

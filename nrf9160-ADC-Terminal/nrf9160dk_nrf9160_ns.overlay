@@ -52,3 +52,13 @@
                <20 0 &gpio0 30 0>,
                <21 0 &gpio0 31 0>;
 };
+
+
+&adc {
+    status = "okay";
+    compatible = "nordic,nrf-saadc";
+};
+
+&gpiote {
+    status = "okay";
+};
