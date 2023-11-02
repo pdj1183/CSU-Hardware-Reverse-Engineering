@@ -24,6 +24,8 @@
 #include <hw_id.h>
 #endif
 
+#define MAX_FLOAT_STR_SIZE 15
+
 LOG_MODULE_REGISTER(aws_iot_sample, CONFIG_AWS_IOT_SAMPLE_LOG_LEVEL);
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LTE_AUTO_INIT_AND_CONNECT),
@@ -76,7 +78,7 @@ static int shadow_update(bool version_number_include)
 	int err;
 	char *message;
 	int64_t message_ts = 0;
-	int mV = 0;
+	float mV = 0;
 	int raw = 0;
 
 	LOG_INF("Getting date and time");
@@ -91,6 +93,9 @@ static int shadow_update(bool version_number_include)
 		LOG_ERR("get_adc_reading, error: %d", err);
 		return err;
 	}
+	char float_str[MAX_FLOAT_STR_SIZE];
+	snprintf(float_str, MAX_FLOAT_STR_SIZE, "%f", mV);
+	LOG_INF("Raw value == %d mV value == %s", raw, float_str);
 
 	cJSON *root_obj = cJSON_CreateObject();
 	cJSON *state_obj = cJSON_CreateObject();
@@ -469,7 +474,7 @@ int main(void)
 {
 	int err;
 
-	LOG_INF("The AWS IoT sample started, version: %s", CONFIG_AWS_IOT_SAMPLE_APP_VERSION);
+	LOG_INF("The nRF9160 Recreation started");
 
 	cJSON_Init();
 

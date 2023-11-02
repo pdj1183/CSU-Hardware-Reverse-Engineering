@@ -20,9 +20,20 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20)
 #define SLEEP_TIME_MS 700
 #define ADC_OVERSAMPLING SAADC_OVERSAMPLE_OVERSAMPLE_Over256x
-#define VDD_GPIO 1.8
+#define VDD_GPIO 1800
 
 static nrf_saadc_value_t m_samples_buffer[BUFFER_SIZE];
+
+float custom_raw_to_milli(int raw) {
+	//Hard coded values, change with Gain/Resolution Stuff
+    float denominator = 0.00055556;  //.25/VDD_4
+    int exponent = 16384; //2^RESOLUTION
+
+    // Calculate [V(P) - V(N)]
+    float voltageDifference = (raw / (denominator * exponent));
+
+    return voltageDifference;
+}
 
 static const nrfx_saadc_channel_t nrf_1st_channel = {
 	.channel_config = {
@@ -39,24 +50,7 @@ static const nrfx_saadc_channel_t nrf_1st_channel = {
 	.channel_index = 0
 };
 
-
-static int adc_sample(nrfx_err_t* status, int *volt, int *raw)
-{
-	int ret = 0;
-	int adc_voltage = 0;
-
-	while ((*status = nrfx_saadc_mode_trigger()) == NRFX_ERROR_BUSY)
-	{}
-	NRFX_ASSERT(*status == NRFX_SUCCESS);
-	adc_voltage = m_samples_buffer[1];
-	ret = adc_raw_to_millivolts(VDD_GPIO/4, ADC_GAIN, ADC_GAIN, &adc_voltage);
-
-	*raw = m_samples_buffer[1];
-	*volt = adc_voltage;
-	return ret;
-}
-
-int get_adc_reading(int *milivolt, int *raw) {
+int get_adc_reading(float *milivolt, int *raw) {
 
 	struct gpio_dt_spec p17 = GPIO_DT_SPEC_GET(DT_NODELABEL(led0), gpios);
 	struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
@@ -101,12 +95,20 @@ int get_adc_reading(int *milivolt, int *raw) {
 
 	if (err) return err;
 	
-	for (int i = 0; i <= 2; i++) {
-		err = adc_sample(&status, milivolt, raw);
-		if (err) return err;
-		k_msleep(SLEEP_TIME_MS);
-	}
+	int ret = 0;
+	float adc_voltage = 0;
 
+	while ((status = nrfx_saadc_mode_trigger()) == NRFX_ERROR_BUSY)
+	{}
+	NRFX_ASSERT(status == NRFX_SUCCESS);
+	adc_voltage = m_samples_buffer[1];
+	adc_voltage = custom_raw_to_milli(adc_voltage);
+
+	*raw = m_samples_buffer[1];
+	*milivolt = adc_voltage;	
+
+	nrfx_saadc_uninit();
+	
 	gpio_pin_set_dt(&p17, 0);
 	gpio_pin_set_dt(&led1, 0);
 

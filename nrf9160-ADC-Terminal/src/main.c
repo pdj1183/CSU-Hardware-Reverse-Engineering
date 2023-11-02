@@ -2,12 +2,11 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <string.h>
 #include <nrfx_saadc.h>
 #include <nrfx_gpiote.h>
-#include <nrfx_log.h>
 
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN1
 #define BUFFER_SIZE 2UL
@@ -18,9 +17,26 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20)
 #define SLEEP_TIME_MS 700
 #define ADC_OVERSAMPLING SAADC_OVERSAMPLE_OVERSAMPLE_Over256x
-#define VDD_GPIO 1.8
+#define VDD_GPIO 1800
+#define MAX_FLOAT_STR_SIZE 15
+
+LOG_MODULE_REGISTER(adc_terminal, CONFIG_ADC_TERMINAL_LOG_LEVEL);
 
 static nrf_saadc_value_t m_samples_buffer[BUFFER_SIZE];
+
+float custom_raw_to_milli(int raw) {
+    //Hard coded values, change with Gain/Resolution Stuff
+    float denominator = 0.00055556; //.25/VDD_4
+    int exponent = 16384; //2^RESOLUTION
+
+    // Calculate [V(P) - V(N)]
+    // char denominator_str[MAX_FLOAT_STR_SIZE];
+    // snprintf(denominator_str, MAX_FLOAT_STR_SIZE, "%f", denominator);
+    // LOG_INF("RAW TO MILLI %d / ((%s) * %d)\n", raw, denominator_str, exponent);
+    float voltageDifference = (raw / (denominator * exponent));
+
+    return voltageDifference;
+}
 
 
 static const nrfx_saadc_channel_t nrf_1st_channel = {
@@ -51,7 +67,7 @@ int main(void)
     (void)status;
 
 
-    printk("Starting the nrf9160 ADC-Terminal with the reworked adc configuration.\n");
+    LOG_INF("Starting the nrf9160 ADC-Terminal with the reworked adc configuration.\n");
 
     status = nrfx_saadc_init(NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY);
     NRFX_ASSERT(status == NRFX_SUCCESS);
@@ -89,7 +105,7 @@ int main(void)
 
             status = nrfx_saadc_offset_calibrate(NULL);
             NRFX_ASSERT(status == NRFX_SUCCESS);
-            printk("Calibration in the blocking manner finished successfully.\n");
+            LOG_INF("Calibration in the blocking manner finished successfully.");
 
             /*
              * If function nrfx_saadc_mode_trigger() returns NRFX_ERROR_BUSY it means that the conversion in the advanced
@@ -98,14 +114,17 @@ int main(void)
             while ((status = nrfx_saadc_mode_trigger()) == NRFX_ERROR_BUSY)
             {}
             NRFX_ASSERT(status == NRFX_SUCCESS);
-            printk("Sample %d\n", sampling_index + 1);
-            int volt = 0;
+            LOG_INF("Sample %d", sampling_index + 1);
+            float volt = 0;
 
             for (uint32_t buffer_index = 0; buffer_index < BUFFER_SIZE; buffer_index++)
             {   
                 volt = m_samples_buffer[buffer_index];
-                err = adc_raw_to_millivolts(VDD_GPIO/4, ADC_GAIN, ADC_RESOLUTION, &volt);
-                printk("[Sample %u]\nRaw value == %d mV value == %d\n", buffer_index, m_samples_buffer[buffer_index], volt);
+                volt = custom_raw_to_milli(volt);
+                char float_str[MAX_FLOAT_STR_SIZE];
+                snprintf(float_str, MAX_FLOAT_STR_SIZE, "%f", volt);
+                LOG_INF("[Sample %u]", buffer_index);
+                LOG_INF("Raw value == %d mV value == %s", m_samples_buffer[buffer_index], float_str);
                
             }
 

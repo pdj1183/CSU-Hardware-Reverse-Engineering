@@ -1,7 +1,7 @@
 {
     "nrf-connect.applications": [
-        "${workspaceFolder}/nrf9160-ADC-Terminal",
-        "${workspaceFolder}/nrf9160-Recreation"
+        "${workspaceFolder}/nrf9160-Recreation",
+        "${workspaceFolder}/nrf9160-ADC-Terminal"
     ],
     "nrf-connect.toolchain.path": "${nrf-connect.toolchain:2.4.0}",
     "files.associations": {
@@ -10,6 +10,10 @@
         "nrfx_saadc.h": "c",
         "kernel.h": "c",
         "nrfx_gpiote.h": "c",
-        "nrfx_log.h": "c"
+        "nrfx_log.h": "c",
+        "functional": "c",
+        "printk.h": "c",
+        "stdio.h": "c",
+        "string.h": "c"
     }
 }
